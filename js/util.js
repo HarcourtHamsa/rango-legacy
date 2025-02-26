@@ -1,4 +1,7 @@
 export function getCryptoSymbol(cryptoName) {
+  // let sanitaizedCryptoName = sanitizeName(cryptoName);
+
+  // aler(sanitaizedCryptoName);
   return new Promise(function (resolve, reject) {
     $.getJSON("/js/cryptocurrencies.json")
       .done(function (data) {
@@ -51,6 +54,9 @@ export function getCryptoSymbol(cryptoName) {
 }
 
 export function getCryptoExchangeData(amountIn, fromChain, toChain) {
+  const sanitizedFromChain = sanitizeName(fromChain);
+  const sanitizedToChain = sanitizeName(toChain);
+
   return new Promise(function (resolve, reject) {
     // Base URL and hardcoded parameters
     const baseUrl = "https://price-api.mayan.finance/v3/quote";
@@ -63,9 +69,9 @@ export function getCryptoExchangeData(amountIn, fromChain, toChain) {
       onlyDirect: false,
       amountIn: amountIn,
       fromToken: "0x0000000000000000000000000000000000000000",
-      fromChain: fromChain,
-      toToken: "0x0000000000000000000000000000000000000000",
-      toChain: toChain,
+      fromChain: sanitizedFromChain,
+      toToken: sanitizeToToken(sanitizedToChain),
+      toChain: sanitizedToChain,
       slippageBps: "auto",
       referrer: "7HN4qCvG2dP5oagZRxj2dTGPhksgRnKCaLPjtjKEr1Ho",
       gasDrop: 0,
@@ -85,7 +91,7 @@ export function getCryptoExchangeData(amountIn, fromChain, toChain) {
         resolve(data);
       },
       error: function (xhr, status, error) {
-        reject(`Error fetching crypto exchange data: ${error}`);
+        reject(error || `Route Not Found`);
       },
     });
   });
@@ -99,4 +105,22 @@ export function formatCryptoAmount(amount, decimalPlaces = 8) {
   formattedAmount = formattedAmount.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
   return formattedAmount;
+}
+
+export function sanitizeName(name) {
+  if (name === "bnb smart chain") {
+    return "bsc";
+  }
+
+  return name.toLowerCase();
+}
+
+export function sanitizeToToken(chain) {
+  if (chain === "arbitrum") {
+    return "0x912ce59144191c1204e64559fe8253a0e49e6548";
+  } else if (chain === "optimism") {
+    return "0x4200000000000000000000000000000000000042";
+  }
+
+  return "0x0000000000000000000000000000000000000000";
 }

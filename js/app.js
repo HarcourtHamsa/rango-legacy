@@ -145,10 +145,23 @@ $(document).ready(function () {
               ".MuiTypography-root.MuiTypography-h5.font-bold-important.pt-1.pt-6.css-mcjdx5"
             ).text(formatCryptoAmount(amount));
           })
-          .catch((error) => alert(error))
+          .catch((error) => {
+            $("#fade-modal").empty().html(`
+    <h2 style="color: #f25a67; font-size: 1rem;">Fetch quote error</2>
+    <p class="modal-error-message" style="color: #ccc; font-size: 0.8rem; margin-top: 0.5rem;">${
+      error || "An error occurred"
+    }</p>
+  `);
+
+            $("#fade-modal").modal({
+              fadeDuration: 100,
+              closeClass: "icon-remove",
+              closeText: "!",
+            });
+          })
           .finally(() => {
             // Reset the state to null after the fetch is complete
-            history.pushState({}, "", "index.html");
+            history.pushState({}, "", "index.html?state=inactive");
           });
       }
 
@@ -171,4 +184,56 @@ $(document).ready(function () {
     // Redirect to the new URL
     window.location.href = "/api/secureproxy" + search;
   }
+});
+
+// Listen for real-time input changes
+$(document).on("input", ".MuiInputBase-input.css-1jhxu0", function () {
+  const updatedAmount = $(this).val();
+
+  // Get current values from the UI
+  let fromChain = $(".custom-select-button.from .flex.items-center.text-sm")
+    .text()
+    .trim();
+  let toChain = $(".custom-select-button.to .flex.items-center.text-sm")
+    .text()
+    .trim();
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const state = urlParams.get("state");
+
+  if (state !== "inactive") {
+    return;
+  }
+
+  // Call your exchange data function
+  getCryptoExchangeData(
+    updatedAmount,
+    fromChain.toLowerCase(),
+    toChain.toLowerCase()
+  )
+    .then((data) => {
+      const amount = data.quotes[0].expectedAmountOut;
+
+      $(
+        ".MuiTypography-root.MuiTypography-h5.font-bold-important.pt-1.pt-6.css-mcjdx5"
+      ).text(formatCryptoAmount(amount));
+    })
+    .catch((error) => {
+      $("#fade-modal").empty().html(`
+        <h2 style="color: #f25a67; font-size: 1rem;">Fetch quote error</h2>
+        <p class="modal-error-message" style="color: #ccc; font-size: 0.8rem; margin-top: 0.5rem;">
+          ${error || "An error occurred"}
+        </p>
+      `);
+
+      $("#fade-modal").modal({
+        fadeDuration: 100,
+        closeClass: "icon-remove",
+        closeText: "!",
+      });
+    })
+    .finally(() => {
+      // Reset the state to null after the fetch is complete
+      history.pushState({}, "", "index.html?state=inactive");
+    });
 });
